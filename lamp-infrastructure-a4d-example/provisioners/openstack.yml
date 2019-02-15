@@ -1,0 +1,15 @@
+---
+
+# TO-DO: add ansible heat stack creation for openstack deployment
+ 
+# Run some general configuration on all openstack hosts.
+- hosts: lamp
+  gather_facts: false
+
+  tasks:
+    # - name: Wait for port 22 to become available.
+    #   local_action: "wait_for port=22 host={{ inventory_hostname }}"
+
+    - name: Set selinux into 'permissive' mode.
+      selinux: policy=targeted state=permissive
+      become: yes

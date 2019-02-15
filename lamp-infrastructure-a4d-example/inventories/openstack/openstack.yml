@@ -1,0 +1,10 @@
+---
+# OpenStack inventory using Ansible-inventory plugin
+
+# Make the plugin behave like the default behavior of the old .py script
+plugin: openstack
+expand_hostvars: yes
+fail_on_errors: yes
+
+# allow for private IP addresses to be used for ansible_host variable
+private: yes

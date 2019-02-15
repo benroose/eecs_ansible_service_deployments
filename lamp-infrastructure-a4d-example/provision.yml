@@ -1,0 +1,12 @@
+---
+# Uncomment the provisioner you would like to use. For for Vagrant provisioning,
+# use `vagrant up` instead of this playbook.
+
+# For Openstack, currently need to create stack from heat templates first
+
+# - import_playbook: provisioners/digitalocean.yml
+# - import_playbook: provisioners/aws.yml
+- import_playbook: provisioners/openstack.yml
+
+# Configure provisioned servers.
+- import_playbook: configure.yml

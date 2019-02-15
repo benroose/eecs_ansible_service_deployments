@@ -1,0 +1,26 @@
+---
+- hosts: lamp-db
+  become: yes
+
+  vars_files:
+    - vars.yml
+
+# BEN: Changed ad4.lamp.db.1 to ad4.lamp.db.0 since openstack is naming instances with an %index% starting at 0!
+ 
+  pre_tasks:
+    - name: Create dynamic MySQL variables.
+      set_fact:
+        mysql_users:
+          - name: mycompany_user
+            host: "{{ hostvars[groups['lamp-www'][0]]['ansible_host'] }}"
+            password: secret
+            priv: "*.*:SELECT"
+          - name: mycompany_user
+            host: "{{ hostvars[groups['lamp-www'][1]]['ansible_host'] }}"
+            password: secret
+            priv: "*.*:SELECT"
+        mysql_replication_master: "hostvars[groups['lamp-db'][0]]['ansible_host']"
+
+  roles:
+    - geerlingguy.firewall
+    - geerlingguy.mysql
