@@ -1,6 +1,6 @@
 # Web Architecture Example - Ansible
 
-## FORKED AND ADAPTED FROM GEERLINGGUY ANSIBLE FOR DEVOPS EXAMPLE: https://github.com/geerlingguy/ansible-for-devops/tree/master/lamp-infrastructure
+## FORKED AND ADAPTED FROM [GEERLINGGUY ANSIBLE FOR DEVOPS EXAMPLE](https://github.com/geerlingguy/ansible-for-devops/tree/master/lamp-infrastructure)
 
 This is a simple example of a complete web architecture configuration using Ansible to configure a set of VMs either on local infrastructure using VirtualBox and Vagrant (using the included Vagrantfile), or on a cloud hosting provider (in this case, DigitalOcean, Amazon AWS, and OpenStack).
 
