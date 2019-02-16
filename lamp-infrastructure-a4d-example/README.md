@@ -1,6 +1,8 @@
 # Web Architecture Example - Ansible
 
-This is a simple example of a complete web architecture configuration using Ansible to configure a set of VMs either on local infrastructure using VirtualBox and Vagrant (using the included Vagrantfile), or on a cloud hosting provider (in this case, DigitalOcean).
+## FORKED AND ADAPTED FROM GEERLINGGUY ANSIBLE FOR DEVOPS EXAMPLE: https://github.com/geerlingguy/ansible-for-devops/tree/master/lamp-infrastructure
+
+This is a simple example of a complete web architecture configuration using Ansible to configure a set of VMs either on local infrastructure using VirtualBox and Vagrant (using the included Vagrantfile), or on a cloud hosting provider (in this case, DigitalOcean, Amazon AWS, and OpenStack).
 
 The architecture for the example web application will be:
 
@@ -88,6 +90,12 @@ After everything is booted and configured, visit the IP address of the Varnish s
   - Hosting instances on AWS may incur hosting fees (unless all usage falls within AWS's first-year free tier limits). While the charges will be nominal (likely less than $1 USD for many hours of testing), it's important to destroy instances you aren't actively using!
   - You can use the included `ec2.py` inventory script for dynamic inventory (`./ec2.py --list` to test).
 
+## Build and configure the servers (OpenStack)
+
+### DOCUMENTATION TO DO!
+
 ## About the Author
 
 This project was created by [Jeff Geerling](https://www.jeffgeerling.com/) as an example for [Ansible for DevOps](https://www.ansiblefordevops.com/).
+
+This Project adapted for provisioning on OpenStack by [Ben Roose](https://github.com/benroose)
