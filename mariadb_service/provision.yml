@@ -1,0 +1,7 @@
+---
+
+# provision servers on OpenStack - must have sourced OS project credentials file first!!
+# - import_playbook: provisioners/openstack.yml
+
+# Configure provisioned servers.
+- import_playbook: configure.yml

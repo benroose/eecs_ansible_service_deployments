@@ -1,0 +1,61 @@
+---
+- hosts: lamp-db
+  become: yes
+
+  vars_files:
+    - vars.yml
+ 
+  pre_tasks:
+    # - name: Create dynamic MySQL vars file.
+    #   local_action:
+    #     module: template
+    #     src: "templates/mysql_databases.j2"
+    #     dest: "/tmp/database_file"
+    #   become: no
+    #   run_once: true
+
+    # - include_vars:
+    #     file: "/tmp/database_file"
+    #     # name: persistent_users
+      
+    #   set_fact:
+    #     mysql_databases:
+    #       - name: "{{ item }}_database"
+    #         collation: utf8_general_ci
+    #         encoding: utf8
+    #   with_sequence: start=1 end=3 format=dbuser%02x
+
+    # - name: Create dynamic MySQL users.
+    #   set_fact:
+    #     mysql_users:
+    #       - name: "{{ item }}"
+    #         state: present
+    #         host: "10.10.11.0/24"
+    #         password: "{{ lookup('password', '/tmp/' + item + '-password chars=ascii_letters') }}"
+    #         priv: "{{ item }}_database.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP"
+    #   with_sequence: start=1 end=3 format=dbuser%02x
+
+    - name: Create dynamic MySQL vars.
+      set_fact:
+        mysql_users:
+          - name: mycompany_user
+            host: "{{ hostvars[groups['lamp-www'][0]]['ansible_host'] }}"
+            password: secret
+            priv: "*.*:ALL"
+          - name: mycompany_user
+            host: "{{ hostvars[groups['lamp-www'][1]]['ansible_host'] }}"
+            password: secret
+            priv: "*.*:ALL"
+          - name: mycompany_user
+            host: "{{ hostvars[groups['lamp-varnish'][0]]['ansible_host'] }}"
+            password: secret
+            priv: "*.*:ALL"
+
+    # - name: Create dynamic MySQL replication_master var.
+    #   set_fact:
+        mysql_replication_master: "{{ hostvars[groups['lamp-db'][0]]['ansible_host'] }}"
+
+  roles:
+    - geerlingguy.firewall
+    - geerlingguy.ntp
+    - geerlingguy.mysql

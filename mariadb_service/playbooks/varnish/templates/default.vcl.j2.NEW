@@ -1,0 +1,33 @@
+vcl 4.1;
+
+import directors;
+
+{% for host in groups['lamp-www'] %}
+backend www{{ loop.index }} {
+  .host = "{{ hostvars[host]['ansible_host'] }}";
+  .port = "{{ varnish_backend_port }}";
+  # .probe = {
+  #       .url = "{{ varnish_probe_url }}";
+  #       .timeout = 2s;
+  #       .interval = 5s;
+  #       .window = 8;
+  #       .threshold = 3;
+  #   }
+}
+{% endfor %}
+
+sub vcl_init {
+  new vdir = directors.random();
+  # new vdir = directors.round_robin();
+{% for host in groups['lamp-www'] %}
+  vdir.add_backend(www{{ loop.index }}, 1);
+  # vdir.add_backend(www{{ loop.index }});
+{% endfor %}
+}
+
+sub vcl_recv {
+  set req.backend_hint = vdir.backend();
+
+  # For testing ONLY; makes sure load balancing is working correctly.
+  return (pass);
+}

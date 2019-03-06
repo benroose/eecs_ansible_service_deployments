@@ -1,0 +1,35 @@
+---
+- hosts: lamp-varnish
+  become: yes
+
+  vars_files:
+    - vars.yml
+
+  pre_tasks:
+    # - name: check if varnish secret file exists
+    #   stat: 
+    #     path: "{{ varnish_config_path }}/secret"
+    #   register: secret_file
+
+    # - name: Run uuidgen to generate new varnish secret.
+    #   shell: uuidgen
+    #   register: uuidgen
+    #   when: secret_file.stat.exists == False
+
+    # - name: Set new varnish secret.
+    #   set_fact:
+    #     varnish_secret: "{{ uuidgen.stdout }}"
+    #   when: secret_file.stat.exists == False
+
+  roles:
+    - geerlingguy.firewall
+    - geerlingguy.ntp
+    - geerlingguy.repo-epel
+    - geerlingguy.varnish
+
+  tasks:
+    - name: Copy Varnish default.vcl.
+      template:
+        src: "templates/default.vcl.j2"
+        dest: "/etc/varnish/default.vcl"
+      notify: restart varnish

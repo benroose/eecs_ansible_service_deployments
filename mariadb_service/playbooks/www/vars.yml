@@ -1,0 +1,21 @@
+---
+firewall_allowed_tcp_ports:
+  - "22"
+  - "80"
+
+ntp_manage_config: true
+ntp_servers:
+  - ntp1.wichita.edu
+  - ntp2.wichita.edu
+
+phpmyadmin_mysql_host: "{{ hostvars[groups['lamp-db'][0]]['ansible_host'] }}"
+phpmyadmin_mysql_port: "3306"
+phpmyadmin_mysql_socket: "/var/lib/mysql/mysql.sock"
+phpmyadmin_mysql_user: ""
+phpmyadmin_mysql_password: ""
+
+phpmyadmin_allow_access_ip:
+  - "{{ hostvars[groups['lamp-varnish'][0]]['ansible_host'] }}"
+
+phpmyadmin_allow_setup_ip:
+  - "{{ hostvars[groups['lamp-varnish'][0]]['ansible_host'] }}"

@@ -1,0 +1,67 @@
+vcl 4.1;
+
+import std;
+import directors;
+import cookie;
+import header;
+
+{% for host in groups['lamp-www'] %}
+backend www{{ loop.index }} {
+  .host = "{{ hostvars[host]['ansible_host'] }}";
+  .port = "{{ varnish_backend_port }}";
+  .probe = {
+        .url = "{{ varnish_probe_url }}";
+        .timeout = 2s;
+        .interval = 5s;
+        .window = 8;
+        .threshold = 3;
+    }
+}
+{% endfor %}
+
+# random and round_robin directors are good if backend servers are outputing the same thing, but not if client needs session afinity
+# sub vcl_init {
+#   new vdir = directors.random();
+#   # new vdir = directors.round_robin();
+# {% for host in groups['lamp-www'] %}
+#   vdir.add_backend(www{{ loop.index }}, 1);
+#   # vdir.add_backend(www{{ loop.index }});
+# {% endfor %}
+# }
+
+# sub vcl_recv {
+#   set req.backend_hint = vdir.backend();
+
+# using client.identity and cookies to allow for session affinity (needed for phpmyadmin)
+
+sub vcl_init {
+new cdir = directors.hash();
+{% for host in groups['lamp-www'] %}
+  cdir.add_backend(www{{ loop.index }}, 1);
+{% endfor %}
+}
+
+sub vcl_recv {
+  cookie.parse(req.http.cookie);
+    if (cookie.get("sticky")) {
+      set req.http.sticky = cookie.get("sticky");
+    } else {
+    # The cookies will have floats in them.
+    # Whatever, ehh, floats your boat can be used.
+    set req.http.sticky = std.random(1, 100);
+  }
+  # use to be client.identity in V3
+  set req.backend_hint = cdir.backend(req.http.sticky);
+}
+
+sub vcl_deliver {
+  # persist the cookie
+  # we need to use the header vmod as there might be a set-cookie
+  # header on the object already and we don't want to mess with it
+  if (req.http.sticky) {
+     header.append(resp.http.Set-Cookie,"sticky=bar" + req.http.sticky + "; Expires=" + cookie.format_rfc1123(now, 60m));
+   }
+
+  # For testing ONLY; makes sure load balancing is working correctly.
+  # return (pass);
+}

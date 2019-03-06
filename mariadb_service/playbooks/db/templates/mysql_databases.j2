@@ -1,0 +1,18 @@
+# All users and databases on mySQL server
+
+mysql_databases:
+{% for db in range(1,5) %}
+   - name: dbuser{{ db }}_database
+     collation: utf8_general_ci
+     encoding: utf8
+{% endfor %}
+
+mysql_users:
+{% for user in range(1,5) %}
+   - name: dbuser{{ user }}
+     host: 10.10.11.0/255.255.255.0
+     password: {{ lookup('password', '/dev/null chars=ascii_letters length=12') }}
+     priv: "*.*:SELECT"
+{% endfor %}
+
+     ## priv: "dbuser user _database.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP"

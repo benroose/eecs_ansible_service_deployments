@@ -1,0 +1,21 @@
+---
+- src: geerlingguy.firewall
+- src: geerlingguy.ntp
+- src: geerlingguy.repo-epel
+- src: geerlingguy.varnish
+- src: geerlingguy.apache
+- src: geerlingguy.php
+- src: geerlingguy.php-mysql
+# - src: geerlingguy.php-memcached
+# - src: geerlingguy.memcached
+
+# switching geerlingguy's roles to benroose's forked versions
+# - src: geerlingguy.phpmyadmin # upstream galaxy role
+- src: https://github.com/benroose/ansible-role-phpmyadmin # URL to my fork of Galaxy role's GitHub repo
+  version: customized_config # the name of my patch branch
+  name: geerlingguy.phpmyadmin # save role with name it had when downloaded from Galaxy
+
+# - src: geerlingguy.mysql # upstream galaxy role
+- src: https://github.com/benroose/ansible-role-mysql # URL to my fork of Galaxy role's GitHub repo
+  version: fix_replication # the name of my patch branch
+  name: geerlingguy.mysql # save role with name it had when downloaded from Galaxy

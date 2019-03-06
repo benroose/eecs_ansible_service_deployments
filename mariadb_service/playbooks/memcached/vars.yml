@@ -1,0 +1,8 @@
+---
+firewall_allowed_tcp_ports:
+  - "22"
+firewall_additional_rules:
+  - "iptables -A INPUT -p tcp --dport 11211 -s {{ hostvars[groups['lamp-www'][0]]['ansible_host'] }} -j ACCEPT"
+  - "iptables -A INPUT -p tcp --dport 11211 -s {{ hostvars[groups['lamp-www'][1]]['ansible_host'] }} -j ACCEPT"
+
+memcached_listen_ip: "0.0.0.0"
