@@ -63,7 +63,7 @@ After everything is booted and configured, visit the public IP address of the ne
 
 > If you get an error like "Failed to connect to the host via ssh: Host key verification failed.", then you can temporarily disable host key checking. Run the command `export ANSIBLE_HOST_KEY_CHECKING=False` and then run the `provision.yml` playbook again.
 
-### Notes
+### Ancillary Notes
 
   - Private network IP addresses are used for all cross-instance communication (e.g. mySQL communication, MySQL master/slave replication). It is assumed the private network is secure, so port specific firewalls and mySQL privileges allow for access by any host within this private network.
   - Since a private network is used, all external Ansible connections into hosts via SSH must proxy through the public IP address of the Apache/phpMyAdmin server instance. The custom SSH proxyjump can be configured in `ansible.cfg` and `inventories/openstack/ssh.cfg`.
