@@ -8,12 +8,7 @@ ntp_servers:
   - ntp1.wichita.edu
   - ntp2.wichita.edu
 
+database_users_file: /tmp/cslab_db_users
+
 # mysql_root_password_update: yes
 # mysql_user_password_update: yes
-
-# testing only
-# mysql_databases:
-#   - name: "mycompany_database"
-#     collation: utf8_general_ci
-#     encoding: utf8
-    

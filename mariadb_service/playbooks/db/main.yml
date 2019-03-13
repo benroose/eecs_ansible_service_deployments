@@ -6,38 +6,22 @@
     - vars.yml
  
   pre_tasks:
-    - name: check if database_file exists
+    - name: check if database_users_file exists
       stat: 
-        path: "/tmp/database_file"
-      register: database_file
+        path: "{{ database_users_file }}"
+      register: database_users_file
 
 
-    - name: Create dynamic MySQL vars file.
+    - name: Create dynamic MySQL vars file with databases, users, and passwords.
       local_action:
         module: template
         src: "templates/mysql_databases.j2"
-        dest: "/tmp/database_file"
+        dest: "{{ database_users_file }}"
       become: no
-      when: database_file.stat.exists == false
+      when: database_users_file.stat.exists == false
 
     - include_vars:
-        file: "/tmp/database_file"
-
-    # - name: Create dynamic MySQL vars - testing only.
-    #   set_fact:
-    #     mysql_users:
-    #       - name: mycompany_user
-    #         host: "{{ hostvars[groups['lamp-www'][0]]['ansible_host'] }}"
-    #         password: secret
-    #         priv: "*.*:ALL"
-    #       - name: mycompany_user
-    #         host: "{{ hostvars[groups['lamp-www'][1]]['ansible_host'] }}"
-    #         password: secret
-    #         priv: "*.*:ALL"
-    #       - name: mycompany_user
-    #         host: "{{ hostvars[groups['lamp-varnish'][0]]['ansible_host'] }}"
-    #         password: secret
-    #         priv: "*.*:ALL"
+        file: "{{ database_users_file }}"
 
     - name: Create dynamic MySQL replication_master var.
       set_fact:

@@ -12,10 +12,10 @@ parameters:
     constraints:
       - allowed_values: [external_access, wsu_only, datacenter_only, prinet_only]
 
-  proxy_enabled:
+  web_enabled:
     type: string
-    label: Lamp Proxy
-    description: enable lamp proxy as single point of web entry.
+    label: Lamp Web
+    description: enable lamp web/proxy as single point of web entry.
     default: yes
     constraints:
       - allowed_values: [yes, no]

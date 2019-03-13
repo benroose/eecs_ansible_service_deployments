@@ -10,7 +10,7 @@
       access: wsu_only
       public_net: Public_971
       key: teaching
-      template: stack_openstack_with_vols.yml
+      template: stack_with_vols.yml
       environment:
         - env_openstack_cslab.yml
 
