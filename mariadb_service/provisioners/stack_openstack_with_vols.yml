@@ -1,6 +1,6 @@
 heat_template_version: newton
  
-description: Template for setting up a full LAMP stack with no network
+description: Template for setting up a full LAMP stack and a single Apache web-server as the public frontend. New Cinder volumes are attached to lamp_db instances. NOTE: private network creation has been commented out for deployment within cslab project.
 
 parameters:
 ## STACK EXTERNAL ACCESS TYPE
@@ -59,22 +59,6 @@ parameters:
 
 
 ## INSTANCE SPECIFIC PARAMS 
-  # lamp_proxy_name:
-  #   type: string
-  #   label: Proxy Group Name
-  #   description: Group and Hostname of lamp proxy (varnish) created.
-  #   default: a4d-lamp-varnish
-  # lamp_proxy_flavor:
-  #   type: string
-  #   label: Proxy Flavor
-  #   description: Type of instance (flavor) to be used for lamp proxy (varnish).
-  #   default: m1.small
-  # lamp_proxy_fixed_ip:
-  #   type: string
-  #   label: Lamp Proxy IP
-  #   description: Fixed IP address to be used for lamp proxy (varnish).
-  #   default: 10.10.11.110
-
   lamp_web_name:
     type: string
     label: web Group Name
@@ -111,11 +95,6 @@ parameters:
     label: Database Volume Size
     description: Size of volumes to be used for lamp database servers (mariadb).
     default: 10
-  # lamp_db_master_fixed_ip:
-  #   type: string
-  #   label: Lamp DB Master IP
-  #   description: Fixed IP address to be used for lamp master database (mariadb).
-  #   default: 10.10.11.120
   lamp_db_server_size:
     type: string
     label: Database Server Size
@@ -134,12 +113,13 @@ parameters:
   #   default: m1.small
 
 conditions:
-  proxy_enabled:
+  web_enabled:
     equals:
-      - get_param: proxy_enabled
-      - yes
+      - get_param: web_enabled
+      - 'yes'
 
 resources:
+
 ## GENERATE PRIVATE NETWORK, SUBNET, AND ROUTER
   # network:
   #   type: Mod::EECS::PrivateNet
@@ -184,38 +164,6 @@ resources:
       public_net: { get_param: public_net }
 
 ## PROVISION PRIVATE INSTANCES
-  # lamp_web:
-  #   type: OS::Heat::ResourceGroup
-  #   properties:
-  #     count: { get_param: lamp_web_server_size }
-  #     resource_def:
-  #       type: Mod::EECS::SimpleInstance
-  #       properties:
-  #         name: { str_replace: { params: { __name_prefix__: { get_param: lamp_web_name } }, template: __name_prefix__-%index% } }
-  #         metadata: { inventory_group: { get_param: lamp_web_name } }
-  #         flavor: { get_param: lamp_web_flavor }
-  #         image: { get_param: image }
-  #         key: { get_param: key }
-  #         private_net: { get_param: private_net_name }
-  #         private_subnet: { str_replace: { params: { __name_prefix__: { get_param: private_net_name } }, template: __name_prefix__-sub } }
-  #         security_groups:
-  #           - { get_attr: [ security_groups, sg_ingress_ssh_prinet ] }
-  #           - { get_attr: [ security_groups, sg_ingress_web_prinet ] }
-
-  # lamp_db_vols:
-  #   type: OS::Heat::ResourceGroup
-  #   properties:
-  #     count: { get_param: lamp_db_server_size }
-  #     resource_def:
-  #       type: OS::Cinder::Volume
-  #       # type: volume_with_attachment.yaml
-  #       properties:
-  #         name: { str_replace: { params: { __name_prefix__: { get_param: lamp_db_name } }, template: __name_prefix__-vol-%index% } }
-  #         image: {get_param: image}
-  #         size: {get_param: lamp_db_vol_size}
-  #         # instance_id: { get_resource: instance }
-  #         # volume_size: { get_param: volume_size }
-
   lamp_db:
     type: OS::Heat::ResourceGroup
     properties:
@@ -249,14 +197,6 @@ resources:
   #     security_groups:
   #       - { get_attr: [ security_groups, sg_ingress_ssh_prinet ] }
   #       - { get_attr: [ security_groups, sg_ingress_memcached ] }
-
-## GENERATE VOLUME FOR PROJECT INSTANCE
-  # pro_vol1:
-  #   type: OS::Cinder::Volume
-  #   properties:
-  #     name: { str_replace: { params: { __name_prefix__: { get_param: project_name } }, template: __name_prefix__-vol-1 } }
-  #     image: {get_param: project_image}
-  #     size: {get_param: project_vol_size}
 
 outputs:
   web_external_access_ip:

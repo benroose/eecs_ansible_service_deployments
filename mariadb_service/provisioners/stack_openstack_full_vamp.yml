@@ -1,6 +1,6 @@
 heat_template_version: newton
  
-description: Template for setting up private network with a full LAMP stack
+description: Template for setting up a private network with a full LAMP stack and varnish as a public frontend.
 
 parameters:
 ## STACK EXTERNAL ACCESS TYPE

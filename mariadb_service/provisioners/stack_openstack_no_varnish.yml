@@ -1,6 +1,6 @@
 heat_template_version: newton
  
-description: Template for setting up private network with a full LAMP stack
+description: Template for setting up private network with a full LAMP stack and a single Apache web-server as the public frontend. No Cinder volumes are attached to instances.
 
 parameters:
 ## STACK EXTERNAL ACCESS TYPE
