@@ -1,38 +1,39 @@
-# MariaDB service - Ansible
+# MariaDB/mySQL service - cslab-db
 
-## IN TESTING
+### Ansible deployment
 
-## TODO: NEED TO CHANGE BELOW DOCUMENTATION FROM GEERLINGGUY LAMP EXAMPLE TO EECS MARIADB SERVICE
+## Description
 
-This is a simple example of a complete web architecture configuration using Ansible to configure a set of VMs either on local infrastructure using VirtualBox and Vagrant (using the included Vagrantfile), or on a cloud hosting provider (in this case, DigitalOcean).
+ADAPTED FROM [geerlingguy Ansible for Devops LAMP infrastructure example](https://github.com/geerlingguy/ansible-for-devops/tree/master/lamp-infrastructure)
 
-The architecture for the example web application will be:
+The architecture for the MariaDB/mySQL service will be:
 
-                       --------------------------
-                      |  varnish.test (Varnish)  |
-                      |  192.168.2.2             |
-                       --------------------------
-                          /                   \
-         ----------------------          ----------------------
-        |  www1.test (Apache)  |        |  www2.test (Apache)  |
-        |  192.168.2.3         |        |  192.168.2.4         |
-         ----------------------          ----------------------
-                          \                   /
-                      ------------------------------
-                     |  memcached.test (Memcached)  |
-                     |  192.168.2.7                 |
-                      ------------------------------
-                          /                   \
+                    -----------------------------------
+                   |  cslab-db-web (Apache/phpMyAdmin) |
+                   |  Private IP + Public IP           |
+                    -----------------------------------
+                          /                   
      -----------------------------       ----------------------------
-    |  db1.test (MySQL - Master)  |     |  db2.test (MySQL - Slave)  |
-    |  192.168.2.5                |     |  192.168.2.6               |
+    |  cslab-db-0 (mySQL-Master)  | --- |  cslab-db-1 (mySQL-Slave)  |
+    |  Private IP                 |     |  Private IP                |
      -----------------------------       ----------------------------
 
-*IP addresses and hostnames in this diagram are modeled after local VirtualBox/Vagrant-based VMs.*
+This service was designed for students taking CS 665 "Introduction to Databases" at WSU to gain hands on experience with a MariaDB/mySQL server.
 
-This architecture offers multiple levels of caching and high availability/redundancy on almost all levels, though to keep it simple, there are single points of failure. All persistent data stored in the database is stored in a slave server, and one of the slowest and most constrained parts of the stack (the web servers, in this case running a PHP application through Apache) is easy to scale horizontally, behind Varnish, which is acting as a caching (reverse proxy) layer and load balancer.
+The architecture offers a single MariaDB/mySQL server for users to access via a separate phpMyAdmin web server. Only the Apache/phpMyAdmin web server will be given an external IP address. If deployed within a previously built cslab private network which contains a Linux-based IDE environment, then students can access the master database server directly via mySQL shell or language-specific mySQL connectors from within this IDE environment.
 
-For the purpose of demonstration, Varnish's caching is completely disabled, so you can refresh and see both Apache servers (with caching enabled, Varnish would cache the first response then keep serving it without hitting the rest of the stack). You can see the caching and load balancing configuration in `playbooks/varnish/templates/default.vcl`).
+The mySQL slave is set up for synchronous replication of the mySQL master. This slave could be configured in future for scheduled mysqldump and rsync to a backup file-server to allow for automated backup snapshots to be run without affecting access into the master server. For database persistance, both mySQL servers are attached to Cinder virtual volumes which will not be deleted upon mySQL instance deletion.
+
+NOTE: Currently the Apache/phpMyAdmin web server frontend is configured for insecure HTTP access on port 80. In future additional configuration could be added to the www playbook for secure SSL/HTTPS access on port 443.
+
+## Provisioning Notes
+
+Only an OpenStack private cloud provisioner has been created for this MariaDB/mySQL Service. However, other provisioning methods could be coded in the future.
+
+There are three alternative OpenStack Heat template options for provisioning instances:
+  1. `provisioners/stack_with_vols.yml` - This is the production-ready LAMP template which creates the architecture discussed above for cslab-db. Note: private network creation has been commented out in this template for deployment within the already running cslab private network.
+  2. `provisioners/stack_no_vols.yml` - This is the same template as 1 except that no Cinder volumes are created and attached to the mySQL servers. All instances are purely ephemeral.
+  3. `provisioners/stack_full_vamp.yml - This template creates the web server instance(s) as a scalable resource group within the LAMP stack and adds a varnish caching HTTP proxy as the public/external frontend. If a more scalable web deployment for phpMyAdmin access was required then this template could be used, but the varnish playbook and template would need to be reconfigured to allow for HTTP session affinity with cookies.
 
 ## Prerequisites
 
@@ -40,58 +41,35 @@ Before you can run any of these playbooks, you will need to [install Ansible](ht
 
     $ ansible-galaxy install -r requirements.yml
 
-If you would like to build the infrastructure locally, you will also need to install the latest versions of [VirtualBox](https://www.virtualbox.org/wiki/Downloads) and [Vagrant](https://www.vagrantup.com/downloads.html).
+For deployment on OpenStack, you will need to have all python openstack client packages installed, including the additional python "shade" package installed via pip. See [Ben's local_deployments openstack_client.yml file](https://github.com/benroose/eecs_ansible_local_deployments/blob/master/tasks/openstack_client.yml) for a list of required packages.
 
-## Build and configure the servers (Local)
+You must have also locally cloned [Ben's OpenStack Heat template modules](https://github.com/benroose/eecs_openstack_heat/tree/master/modules).
 
-To build the VMs and configure them using Ansible, follow these steps (both from within this directory):
+## Provision and configure the servers (OpenStack)
 
-  1. Run `vagrant up`.
-  2. Run `ansible-playbook configure.yml -i inventories/vagrant/`.
+Pre-suppositions: You have an OpenStack private cloud available, have previously created an openrc.sh file with valid OpenStack user/project credentials, and have created an SSH public key for use within OpenStack.
 
-This guide assumes you already have Vagrant, VirtualBox, and Ansible installed locally.
+To provision the virtual instances and configure them using Ansible, follow these steps (from within this directory):
 
-After everything is booted and configured, visit http://varnish.test/ (if you configured the domain in your hosts file with the line `192.168.2.2  varnish.test`) in a browser, and refresh a few times to see that Varnish, Apache, PHP, Memcached, and MySQL are all working properly!
+  1. Add OpenStack project specific details into `provisioners/openstack.yml` and `provisioners/env_openstack_cslab.yml`
+  2. Set the `provisioners/modules` soft-link to the previously cloned Heat modules directory.
+  3. Adjust automatically created databases, users, and access in `playbooks/db/templates/mysql_databases.j2`
+  4. Set your OpenStack credentials as environment vars: `source [path to your openrc.sh file]`
+  5. Run `ansible-playbook -i inventories/openstack provision.yml`.
 
-## Build and configure the servers (DigitalOcean)
+After everything is booted and configured, visit the public IP address of the newly created Apache/phpMyAdmin server using a web-browser and you should see the phpMyAdmin login page. The generated databases, users, and passwords will be listed in the locally generated file `/tmp/cslab_db_users`.
 
-Pre-suppositions: You have a DigitalOcean account, and you have a Personal Access Token for your account. Additionally, you have `dopy` and Ansible installed on your workstation (install `dopy` with `sudo pip install dopy`).
-
-To build the droplets and configure them using Ansible, follow these steps (both from within this directory):
-
-  1. Set your DigitalOcean Personal Access Token: `export DO_API_TOKEN=[token here]`
-  2. Run `ansible-playbook provision.yml`.
-
-After everything is booted and configured, visit the IP address of the Varnish server that was created in your DigitalOcean account in a browser, and refresh a few times to see that Varnish, Apache, PHP, Memcached, and MySQL are all working properly!
+> If you get an error like "Failed to connect to the host via ssh: Connection timed out" or "UNREACHABLE", then check the custom ssh lamp-proxy and host configuration is correct for your network environment in `inventories/openstack/ssh.cfg` before running the `provision.yml` playbook again.
 
 > If you get an error like "Failed to connect to the host via ssh: Host key verification failed.", then you can temporarily disable host key checking. Run the command `export ANSIBLE_HOST_KEY_CHECKING=False` and then run the `provision.yml` playbook again.
 
 ### Notes
 
-  - Public IP addresses are used for all cross-droplet communication (e.g. PHP to MySQL/Memcached communication, MySQL master/slave replication). For better security and potentially a tiny performance improvement, you can use droplets' `private_ip_address` for cross-droplet communication.
-  - Hosting active or inactive droplets on DigitalOcean will incur hosting fees (normally $0.01 USD/hour for the default 512mb droplets used in this example). While the charges will be nominal (likely less than $1 USD for many hours of testing), it's important to destroy droplets you aren't actively using!
-  - You can use the included `digital_ocean.py` inventory script for dynamic inventory (`python digital_ocean.py --pretty` to test).
-
-## Build and configure the servers (AWS)
-
-Pre-suppositions: You have an Amazon Web Services account with a valid payment method configured, and you have your AWS Access Key and AWS Secret Key from your account. Additionally, you have `boto` and Ansible installed on your workstation (install `boto` with `pip install boto`).
-
-To build the droplets and configure them using Ansible, follow these steps (both from within this directory):
-
-  1. Set your AWS Access Key: `export AWS_ACCESS_KEY_ID=[access key here]`
-  2. Set your AWS Secret Key: `export AWS_SECRET_ACCESS_KEY=[secret key here]`
-  3. Run `ansible-playbook provision.yml`.
-
-After everything is booted and configured, visit the IP address of the Varnish server that was created in your AWS account in a browser, and refresh a few times to see that Varnish, Apache, PHP, Memcached, and MySQL are all working properly!
-
-> If you get an error like "Failed to connect to the host via ssh: Host key verification failed.", then you can temporarily disable host key checking. Run the command `export ANSIBLE_HOST_KEY_CHECKING=False` and then run the `provision.yml` playbook again.
-
-### Notes
-
-  - Public IP addresses are used for all cross-instance communication (e.g. PHP to MySQL/Memcached communication, MySQL master/slave replication). For better security and potentially a tiny performance improvement, you can use instances' `private_ip` for cross-instance communication.
-  - Hosting instances on AWS may incur hosting fees (unless all usage falls within AWS's first-year free tier limits). While the charges will be nominal (likely less than $1 USD for many hours of testing), it's important to destroy instances you aren't actively using!
-  - You can use the included `ec2.py` inventory script for dynamic inventory (`./ec2.py --list` to test).
+  - Private network IP addresses are used for all cross-instance communication (e.g. mySQL communication, MySQL master/slave replication). It is assumed the private network is secure, so port specific firewalls and mySQL privileges allow for access by any host within this private network.
+  - Since a private network is used, all external Ansible connections to hosts via SSH must proxy through the public IP address of the Apache/phpMyAdmin server instance. The custom SSH proxyjump can be configured in `ansible.cfg` and `inventories/openstack/ssh.cfg`.
+  - OpenStack security group `ingress web wsu net` (defined in heat templates as `sg_ingress_web`) and the `phpmyadmin_allow_access_ip` variable in `playbooks/www/vars.yml` are used to control external HTTP access into the Apache/phpMyAdmin server instance.
+  - OpenStack security group `ingress ssh wsu limited net` (defined in heat templates as `sg_ingress_ssh`) is used to control external SSH/Ansible access into the Apache/phpMyAdmin server instance and for proxyjumping to the internal instances.
 
 ## About the Author
 
-This project was created by [Jeff Geerling](https://www.jeffgeerling.com/) as an example for [Ansible for DevOps](https://www.ansiblefordevops.com/).
+This project was modified by Ben Roose for use at Wichita State University from a base example by [Jeff Geerling](https://www.jeffgeerling.com).
