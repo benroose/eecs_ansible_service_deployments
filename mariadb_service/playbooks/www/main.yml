@@ -5,6 +5,10 @@
   vars_files:
     - vars.yml
 
+  pre_tasks:
+    # - name: disable fingerprint checking that may be enabled; when enabled, causes ssh issues
+    #   command: authconfig --disablefingerprint --update
+
   roles:
     - geerlingguy.firewall
     - geerlingguy.ntp
@@ -12,16 +16,19 @@
     - geerlingguy.apache
     - geerlingguy.php
     - geerlingguy.php-mysql
-    - geerlingguy.phpmyadmin
+    # - geerlingguy.phpmyadmin
     # - geerlingguy.php-memcached
-    # - ansible-role-phpmyadmin
+    - ansible-role-phpmyadmin
 
   tasks:
-    - name: Remove the Apache test page.
-      file:
-        path: /var/www/html/index.html
-        state: absent
-    # - name: Copy our fancy server-specific home page.
-    #   template:
-    #     src: templates/index.php.j2
-    #     dest: /var/www/html/index.php
+    - name: Set selinux httpd_can_network_connect flag on and keep it persistent across reboots
+      seboolean:
+        name: httpd_can_network_connect
+        state: yes
+        persistent: yes
+
+    - name: Set selinux httpd_can_network_connect_db flag on and keep it persistent across reboots
+      seboolean:
+        name: httpd_can_network_connect_db
+        state: yes
+        persistent: yes

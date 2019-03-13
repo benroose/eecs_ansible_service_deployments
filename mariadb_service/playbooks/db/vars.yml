@@ -9,11 +9,11 @@ ntp_servers:
   - ntp2.wichita.edu
 
 # mysql_root_password_update: yes
-mysql_user_password_update: yes
-mysql_replication_user: {name: 'replication', password: 'secret'}
+# mysql_user_password_update: yes
 
-mysql_databases:
-  - name: "mycompany_database"
-    collation: utf8_general_ci
-    encoding: utf8
+# testing only
+# mysql_databases:
+#   - name: "mycompany_database"
+#     collation: utf8_general_ci
+#     encoding: utf8
     

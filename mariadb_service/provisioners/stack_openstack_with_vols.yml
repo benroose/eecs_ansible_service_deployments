@@ -1,0 +1,275 @@
+heat_template_version: newton
+ 
+description: Template for setting up a full LAMP stack with no network
+
+parameters:
+## STACK EXTERNAL ACCESS TYPE
+  stack_access:
+    type: string
+    label: stack network access
+    description: network security group ingress access to stack.
+    default: wsu_only
+    constraints:
+      - allowed_values: [external_access, wsu_only, datacenter_only, prinet_only]
+
+  proxy_enabled:
+    type: string
+    label: Lamp Proxy
+    description: enable lamp proxy as single point of web entry.
+    default: yes
+    constraints:
+      - allowed_values: [yes, no]
+
+## NETWORK PARAMS
+  public_net:
+    type: string
+    label: Public network name or ID
+    description: Public network to attach stack.
+    default: Public_971
+  private_net_name:
+    type: string
+    description: Private network name
+    default: test-net
+  private_net_cidr:
+    type: string
+    label: CIDR
+    description: Classless Inter-Domain Routing (CIDR) of the private network.
+    default: '10.10.11.0/24'
+  private_net_gateway:
+    type: string
+    description: Private network gateway address
+    default: '10.10.11.1'
+
+## INSTANCE GLOBAL PARAMS
+  key:
+    type: string
+    label: Key name
+    description: Name of key-pair to be installed on all nodes.
+    default: testing
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for LAMP stack.
+    default: centos-server-7-cloudimg
+  vol_delete_on_termination:
+    type: string
+    label: Volume Deletion
+    description: Whether to delete volumes upon instance deletion (true/false).
+    default: false
+
+
+## INSTANCE SPECIFIC PARAMS 
+  # lamp_proxy_name:
+  #   type: string
+  #   label: Proxy Group Name
+  #   description: Group and Hostname of lamp proxy (varnish) created.
+  #   default: a4d-lamp-varnish
+  # lamp_proxy_flavor:
+  #   type: string
+  #   label: Proxy Flavor
+  #   description: Type of instance (flavor) to be used for lamp proxy (varnish).
+  #   default: m1.small
+  # lamp_proxy_fixed_ip:
+  #   type: string
+  #   label: Lamp Proxy IP
+  #   description: Fixed IP address to be used for lamp proxy (varnish).
+  #   default: 10.10.11.110
+
+  lamp_web_name:
+    type: string
+    label: web Group Name
+    description: Group and Hostname of lamp web servers (apache) created.
+    default: a4d-lamp-www
+  lamp_web_flavor:
+    type: string
+    label: Web Flavor
+    description: Type of instance (flavor) to be used for lamp web servers (apache).
+    default: m1.small
+  lamp_web_fixed_ip:
+    type: string
+    label: Lamp Web IP
+    description: Fixed private IP address to be used for lamp web server (apache).
+    default: 10.10.11.120
+  lamp_web_server_size:
+    type: string
+    label: Web Server Size
+    description: Number of lamp web servers (apache) created in stack.
+    default: 1
+
+  lamp_db_name:
+    type: string
+    label: db Group Name
+    description: Group and Hostname of lamp db servers (apache) created.
+    default: a4d-lamp-db
+  lamp_db_flavor:
+    type: string
+    label: Database Flavor
+    description: Type of instance (flavor) to be used for lamp database servers (mariadb).
+    default: m1.small
+  lamp_db_vol_size:
+    type: string
+    label: Database Volume Size
+    description: Size of volumes to be used for lamp database servers (mariadb).
+    default: 10
+  # lamp_db_master_fixed_ip:
+  #   type: string
+  #   label: Lamp DB Master IP
+  #   description: Fixed IP address to be used for lamp master database (mariadb).
+  #   default: 10.10.11.120
+  lamp_db_server_size:
+    type: string
+    label: Database Server Size
+    description: Number of lamp database servers (mariadb) created in stack.
+    default: 2
+
+  # lamp_memcached_name:
+  #   type: string
+  #   label: Memcached Group Name
+  #   description: Group and Hostname of lamp memcached (varnish) created.
+  #   default: a4d-lamp-memcached
+  # lamp_memcached_flavor:
+  #   type: string
+  #   label: Memcached Flavor
+  #   description: Type of instance (flavor) to be used for lamp memcached (varnish).
+  #   default: m1.small
+
+conditions:
+  proxy_enabled:
+    equals:
+      - get_param: proxy_enabled
+      - yes
+
+resources:
+## GENERATE PRIVATE NETWORK, SUBNET, AND ROUTER
+  # network:
+  #   type: Mod::EECS::PrivateNet
+  #   properties:
+  #     public_net: { get_param: public_net }
+  #     private_net_name: { get_param: private_net_name }
+  #     private_net_cidr: { get_param: private_net_cidr }
+  #     private_net_gateway: { get_param: private_net_gateway }
+
+## GENERATE SECURITY GROUPS
+  security_groups:
+    type: Mod::EECS::SecurityGroups
+    properties:
+      stack_access: { get_param: stack_access }
+      private_subnet_cidr: { get_param: private_net_cidr }
+  
+## PROVISION PUBLIC INSTANCES
+  lamp_web:
+    # condition: web_enabled
+    type: Mod::EECS::SimpleInstance
+    properties:
+      name: { get_param: lamp_web_name }
+      metadata: { inventory_group: { get_param: lamp_web_name } }
+      flavor: { get_param: lamp_web_flavor }
+      image: { get_param: image }
+      key: { get_param: key }
+      private_net: { get_param: private_net_name }
+      private_subnet: { str_replace: { params: { __name_prefix__: { get_param: private_net_name } }, template: __name_prefix__-sub } }
+      ip_address: { get_param: lamp_web_fixed_ip }
+      security_groups:
+        - { get_attr: [ security_groups, sg_ingress_ping ] }
+        - { get_attr: [ security_groups, sg_ingress_ssh ] }
+        - { get_attr: [ security_groups, sg_ingress_web ] }
+
+  web_floating_ip:
+    # condition: web_enabled
+    type: Mod::EECS::FloatingIp
+    properties:
+      port: { get_attr: [lamp_web, port] }
+      private_ip: { get_param: lamp_web_fixed_ip }
+      # private_ip: { get_attr: [lamp_web, ip] }
+      public_net: { get_param: public_net }
+
+## PROVISION PRIVATE INSTANCES
+  # lamp_web:
+  #   type: OS::Heat::ResourceGroup
+  #   properties:
+  #     count: { get_param: lamp_web_server_size }
+  #     resource_def:
+  #       type: Mod::EECS::SimpleInstance
+  #       properties:
+  #         name: { str_replace: { params: { __name_prefix__: { get_param: lamp_web_name } }, template: __name_prefix__-%index% } }
+  #         metadata: { inventory_group: { get_param: lamp_web_name } }
+  #         flavor: { get_param: lamp_web_flavor }
+  #         image: { get_param: image }
+  #         key: { get_param: key }
+  #         private_net: { get_param: private_net_name }
+  #         private_subnet: { str_replace: { params: { __name_prefix__: { get_param: private_net_name } }, template: __name_prefix__-sub } }
+  #         security_groups:
+  #           - { get_attr: [ security_groups, sg_ingress_ssh_prinet ] }
+  #           - { get_attr: [ security_groups, sg_ingress_web_prinet ] }
+
+  # lamp_db_vols:
+  #   type: OS::Heat::ResourceGroup
+  #   properties:
+  #     count: { get_param: lamp_db_server_size }
+  #     resource_def:
+  #       type: OS::Cinder::Volume
+  #       # type: volume_with_attachment.yaml
+  #       properties:
+  #         name: { str_replace: { params: { __name_prefix__: { get_param: lamp_db_name } }, template: __name_prefix__-vol-%index% } }
+  #         image: {get_param: image}
+  #         size: {get_param: lamp_db_vol_size}
+  #         # instance_id: { get_resource: instance }
+  #         # volume_size: { get_param: volume_size }
+
+  lamp_db:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: lamp_db_server_size }
+      resource_def:
+        type: Mod::EECS::SimpleInstanceWithVol
+        properties:
+          name: { str_replace: { params: { __name_prefix__: { get_param: lamp_db_name } }, template: __name_prefix__-%index% } }
+          metadata: { inventory_group: { get_param: lamp_db_name } }
+          flavor: { get_param: lamp_db_flavor }
+          image: { get_param: image }
+          volume_size: { get_param: lamp_db_vol_size }
+          volume_delete_on_termination: { get_param: vol_delete_on_termination }
+          key: { get_param: key }
+          private_net: { get_param: private_net_name }
+          private_subnet: { str_replace: { params: { __name_prefix__: { get_param: private_net_name } }, template: __name_prefix__-sub } }
+          security_groups:
+            - { get_attr: [ security_groups, sg_ingress_ssh_prinet ] }
+            - { get_attr: [ security_groups, sg_ingress_db ] }
+
+  # lamp_memcached:
+  #   type: Mod::EECS::SimpleInstance
+  #   properties:
+  #     name: { get_param: lamp_memcached_name }
+  #     metadata: { inventory_group: { get_param: lamp_memcached_name } }
+  #     flavor: { get_param: lamp_memcached_flavor }
+  #     image: { get_param: image }
+  #     key: { get_param: key }
+  #     private_net: { get_param: private_net_name }
+  #     private_subnet: { str_replace: { params: { __name_prefix__: { get_param: private_net_name } }, template: __name_prefix__-sub } }
+  #     security_groups:
+  #       - { get_attr: [ security_groups, sg_ingress_ssh_prinet ] }
+  #       - { get_attr: [ security_groups, sg_ingress_memcached ] }
+
+## GENERATE VOLUME FOR PROJECT INSTANCE
+  # pro_vol1:
+  #   type: OS::Cinder::Volume
+  #   properties:
+  #     name: { str_replace: { params: { __name_prefix__: { get_param: project_name } }, template: __name_prefix__-vol-1 } }
+  #     image: {get_param: project_image}
+  #     size: {get_param: project_vol_size}
+
+outputs:
+  web_external_access_ip:
+    # condition: web_enabled
+    description: The public IP address to externally access http web.
+    value: { get_attr: [web_floating_ip, ip] }
+
+  web_internal_ip:
+    description: The private IP address to access http web.
+    value: { get_attr: [lamp_web, ip] }
+  db_names:
+    description: The database server names.
+    value: { get_attr: [lamp_db, name] }
+  db_internal_ips:
+    description: The private IP address to access database servers.
+    value: { get_attr: [lamp_db, ip] }

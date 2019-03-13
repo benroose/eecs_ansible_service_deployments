@@ -6,21 +6,21 @@
 
   vars:
     stack:
-      - name: mariadb-test
-      - access: wsu_only
-      - public_net: Public_971
-      - key: testing
+      name: cslab-db
+      access: wsu_only
+      public_net: Public_971
+      key: teaching
 
     instances:
-      - name: a4d-lamp-varnish
-        group: "lamp-varnish"
+      # - name: a4d-lamp-varnish
+      #   group: "lamp-varnish"
         # security_group: ["default", "a4d_lamp_http"]
-      - name: a4d-lamp-www-1
+      - name: a4d-lamp-www
         group: "lamp-www"
         # security_group: ["default", "a4d_lamp_http"]
-      - name: a4d-lamp-www-2
-        group: "lamp-www"
-      #   # security_group: ["default", "a4d_lamp_http"]
+      # - name: a4d-lamp-www-2
+      #   group: "lamp-www"
+        # security_group: ["default", "a4d_lamp_http"]
       - name: a4d-lamp-db-1
         group: "lamp-db"
         # security_group: ["default", "a4d_lamp_db"]
@@ -34,33 +34,46 @@
   tasks:
     - name: Provision private network, security groups, and instances.
       ignore_errors: True
-      register: stack_create
+      register: stack_results
       os_stack:
         name: "{{ stack.name }}"
-        # tag: "{{ tag_name }}"
         state: present
         template: stack_openstack.yml
         environment:
-          - env_openstack.yml
-          parameters:
-            stack_access: "{{ stack.access }}"
-            public_net: "{{ stack.public_net }}"
-            key: "{{ stack.key }}"
-      register: stack_results
+        - env_openstack.yml
+        parameters:
+          stack_access: "{{ stack.access }}"
+          public_net: "{{ stack.public_net }}"
+          key: "{{ stack.key }}"
 
   # may want to "add_hosts" in a future update.
 
-  - name: Refresh dynamic inventory with new hosts after stack creation.
-    meta: refresh_inventory
-    when: stack_results is defined
+    - name: Refresh dynamic inventory with new hosts after stack creation.
+      meta: refresh_inventory
+      # when: stack_results is defined
 
+    - name: Add ssh proxy ip address for inventory.
+      lineinfile: 
+        dest: ../inventories/openstack/ssh.cfg
+        state: present
+        regexp: "^  Hostname" 
+        line: "  Hostname {{ hostvars[groups['lamp-www'][0]]['openstack']['public_v4'] }}"
+    #     line: "  Hostname {{ hostvars[groups['lamp-varnish'][0]]['ansible_host'] }}"
+
+    - name: Add ssh private key location for inventory.
+      lineinfile: 
+        dest: ../inventories/openstack/ssh.cfg
+        state: present
+        regexp: "^  IdentityFile" 
+      line: "  IdentityFile ~/{{ stack.key }}"
  
 # Run some general configuration on all openstack hosts.
 - hosts: lamp
   gather_facts: false
 
   tasks:
-    # - name: Wait for port 22 to become available.
+    - name: Wait for port 22 to become available on ssh proxy.
+      local_action: "wait_for port=22 host={{ hostvars[groups['lamp-www'][0]]['openstack']['public_v4'] }}"
     #   local_action: "wait_for port=22 host={{ inventory_hostname }}"
 
     - name: Set selinux into 'permissive' mode.

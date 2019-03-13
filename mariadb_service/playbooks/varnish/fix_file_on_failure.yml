@@ -1,11 +1,10 @@
 ---
+# use as emergency playbook to copy a new default.vcl file to varnish host
 - hosts: lamp-varnish
   become: yes
 
   vars_files:
     - vars.yml
-
-    # use as emergency playbook to copy a new default.vcl file to varnish host
 
   tasks:
     - name: Copy Varnish default.vcl.

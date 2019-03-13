@@ -1,16 +1,17 @@
 # Varnish
-[lamp-varnish]
-a4d-lamp-varnish
+# [lamp-varnish]
+# a4d-lamp-varnish
 
 # Apache
 [lamp-www]
-a4d-lamp-www-0
-a4d-lamp-www-1
+a4d-lamp-www
+# a4d-lamp-www-0
+# a4d-lamp-www-1
 
 # MySQL
 [lamp-db]
 a4d-lamp-db-0 mysql_replication_role=master mysql_server_id=1
-a4d-lamp-db-1 mysql_replication_role=slave mysql_server_id=1
+a4d-lamp-db-1 mysql_replication_role=slave mysql_server_id=2
 
 # Memcached
 # [lamp-memcached]
@@ -18,7 +19,7 @@ a4d-lamp-db-1 mysql_replication_role=slave mysql_server_id=1
 
 # All lamp stack
 [lamp:children]
-lamp-varnish
+# lamp-varnish
 lamp-www
 lamp-db
 # lamp-memcached

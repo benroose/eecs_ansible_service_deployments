@@ -6,56 +6,54 @@
     - vars.yml
  
   pre_tasks:
-    # - name: Create dynamic MySQL vars file.
-    #   local_action:
-    #     module: template
-    #     src: "templates/mysql_databases.j2"
-    #     dest: "/tmp/database_file"
-    #   become: no
-    #   run_once: true
+    - name: check if database_file exists
+      stat: 
+        path: "/tmp/database_file"
+      register: database_file
 
-    # - include_vars:
-    #     file: "/tmp/database_file"
-    #     # name: persistent_users
-      
-    #   set_fact:
-    #     mysql_databases:
-    #       - name: "{{ item }}_database"
-    #         collation: utf8_general_ci
-    #         encoding: utf8
-    #   with_sequence: start=1 end=3 format=dbuser%02x
 
-    # - name: Create dynamic MySQL users.
+    - name: Create dynamic MySQL vars file.
+      local_action:
+        module: template
+        src: "templates/mysql_databases.j2"
+        dest: "/tmp/database_file"
+      become: no
+      when: database_file.stat.exists == false
+
+    - include_vars:
+        file: "/tmp/database_file"
+
+    # - name: Create dynamic MySQL vars - testing only.
     #   set_fact:
     #     mysql_users:
-    #       - name: "{{ item }}"
-    #         state: present
-    #         host: "10.10.11.0/24"
-    #         password: "{{ lookup('password', '/tmp/' + item + '-password chars=ascii_letters') }}"
-    #         priv: "{{ item }}_database.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP"
-    #   with_sequence: start=1 end=3 format=dbuser%02x
+    #       - name: mycompany_user
+    #         host: "{{ hostvars[groups['lamp-www'][0]]['ansible_host'] }}"
+    #         password: secret
+    #         priv: "*.*:ALL"
+    #       - name: mycompany_user
+    #         host: "{{ hostvars[groups['lamp-www'][1]]['ansible_host'] }}"
+    #         password: secret
+    #         priv: "*.*:ALL"
+    #       - name: mycompany_user
+    #         host: "{{ hostvars[groups['lamp-varnish'][0]]['ansible_host'] }}"
+    #         password: secret
+    #         priv: "*.*:ALL"
 
-    - name: Create dynamic MySQL vars.
+    - name: Create dynamic MySQL replication_master var.
       set_fact:
-        mysql_users:
-          - name: mycompany_user
-            host: "{{ hostvars[groups['lamp-www'][0]]['ansible_host'] }}"
-            password: secret
-            priv: "*.*:ALL"
-          - name: mycompany_user
-            host: "{{ hostvars[groups['lamp-www'][1]]['ansible_host'] }}"
-            password: secret
-            priv: "*.*:ALL"
-          - name: mycompany_user
-            host: "{{ hostvars[groups['lamp-varnish'][0]]['ansible_host'] }}"
-            password: secret
-            priv: "*.*:ALL"
-
-    # - name: Create dynamic MySQL replication_master var.
-    #   set_fact:
         mysql_replication_master: "{{ hostvars[groups['lamp-db'][0]]['ansible_host'] }}"
+        mysql_replication_user:
+          name: 'replication'
+          password: "{{ lookup('password', '/tmp/mariadb/replication chars=ascii_letters') }}"
 
   roles:
     - geerlingguy.firewall
     - geerlingguy.ntp
     - geerlingguy.mysql
+
+  tasks:
+    - name: Set selinux mysql_connect_any flag on and keep it persistent across reboots
+      seboolean:
+        name: mysql_connect_any
+        state: yes
+        persistent: yes

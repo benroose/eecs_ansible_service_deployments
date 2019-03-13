@@ -6,20 +6,20 @@
     - vars.yml
 
   pre_tasks:
-    # - name: check if varnish secret file exists
-    #   stat: 
-    #     path: "{{ varnish_config_path }}/secret"
-    #   register: secret_file
+    - name: check if varnish secret file exists
+      stat: 
+        path: "{{ varnish_config_path }}/secret"
+      register: secret_file
 
-    # - name: Run uuidgen to generate new varnish secret.
-    #   shell: uuidgen
-    #   register: uuidgen
-    #   when: secret_file.stat.exists == False
+    - name: Run uuidgen to generate new varnish secret.
+      shell: uuidgen
+      register: uuidgen
+      when: secret_file.stat.exists == False
 
-    # - name: Set new varnish secret.
-    #   set_fact:
-    #     varnish_secret: "{{ uuidgen.stdout }}"
-    #   when: secret_file.stat.exists == False
+    - name: Set new varnish secret.
+      set_fact:
+        varnish_secret: "{{ uuidgen.stdout }}"
+      when: secret_file.stat.exists == False
 
   roles:
     - geerlingguy.firewall
