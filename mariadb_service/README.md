@@ -1,10 +1,10 @@
 # MariaDB/mySQL service - cslab-db
 
-### Ansible deployment
+### Ansible/Heat deployment
+
+ADAPTED FROM [Jeff Geerling's Ansible for Devops LAMP infrastructure example](https://github.com/geerlingguy/ansible-for-devops/tree/master/lamp-infrastructure).
 
 ## Description
-
-ADAPTED FROM [geerlingguy Ansible for Devops LAMP infrastructure example](https://github.com/geerlingguy/ansible-for-devops/tree/master/lamp-infrastructure)
 
 The architecture for the MariaDB/mySQL service will be:
 
@@ -20,20 +20,20 @@ The architecture for the MariaDB/mySQL service will be:
 
 This service was designed for students taking CS 665 "Introduction to Databases" at WSU to gain hands on experience with a MariaDB/mySQL server.
 
-The architecture offers a single MariaDB/mySQL server for users to access via a separate phpMyAdmin web server. Only the Apache/phpMyAdmin web server will be given an external IP address. If deployed within a previously built cslab private network which contains a Linux-based IDE environment, then students can access the master database server directly via mySQL shell or language-specific mySQL connectors from within this IDE environment.
+The architecture offers a single MariaDB/mySQL server for users to access via a separate phpMyAdmin web server. Only the Apache/phpMyAdmin web server will be given an external IP address. If deployed within a previously built cslab private network which contains a Linux-based IDE environment, then users can access the master database server directly via mysql shell or language-specific mysql connectors from within this IDE environment.
 
-The mySQL slave is set up for synchronous replication of the mySQL master. This slave could be configured in future for scheduled mysqldump and rsync to a backup file-server to allow for automated backup snapshots to be run without affecting access into the master server. For database persistance, both mySQL servers are attached to Cinder virtual volumes which will not be deleted upon mySQL instance deletion.
+The mySQL-Slave is set up for continuous/synchronous replication of the mySQL-Master. This slave could be configured in future for scheduled mysqldump and rsync to a backup file-server to allow for automated backup snapshots to be run without affecting user access into the master server. For database persistance, both mySQL servers are attached to Cinder virtual volumes which will not be deleted upon mySQL instance deletion.
 
-NOTE: Currently the Apache/phpMyAdmin web server frontend is configured for insecure HTTP access on port 80. In future additional configuration could be added to the www playbook for secure SSL/HTTPS access on port 443.
+NOTE: Currently the Apache/phpMyAdmin web server frontend is configured for insecure HTTP access on port 80. In future, additional configuration could be added to the www playbook for secure SSL/HTTPS access on port 443.
 
 ## Provisioning Notes
 
-Only an OpenStack private cloud provisioner has been created for this MariaDB/mySQL Service. However, other provisioning methods could be coded in the future.
+Only an OpenStack private cloud provisioner has been created for this MariaDB/mySQL service. However, other provisioning methods could be coded in the future.
 
 There are three alternative OpenStack Heat template options for provisioning instances:
   1. `provisioners/stack_with_vols.yml` - This is the production-ready LAMP template which creates the architecture discussed above for cslab-db. Note: private network creation has been commented out in this template for deployment within the already running cslab private network.
-  2. `provisioners/stack_no_vols.yml` - This is the same template as 1 except that no Cinder volumes are created and attached to the mySQL servers. All instances are purely ephemeral.
-  3. `provisioners/stack_full_vamp.yml - This template creates the web server instance(s) as a scalable resource group within the LAMP stack and adds a varnish caching HTTP proxy as the public/external frontend. If a more scalable web deployment for phpMyAdmin access was required then this template could be used, but the varnish playbook and template would need to be reconfigured to allow for HTTP session affinity with cookies.
+  2. `provisioners/stack_no_vols.yml` - This is the same template as above except that no Cinder volumes are created and attached to the mySQL servers. All instances are purely ephemeral.
+  3. `provisioners/stack_full_vamp.yml` - This template creates the web server instance(s) as a scalable resource group within the LAMP stack and adds a varnish caching HTTP proxy as the public/external frontend. If a more scalable web deployment for phpMyAdmin access was required then this template could be used, but the varnish playbook would need to be reconfigured to allow for HTTP session affinity with cookies.
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ Before you can run any of these playbooks, you will need to [install Ansible](ht
 
     $ ansible-galaxy install -r requirements.yml
 
-For deployment on OpenStack, you will need to have all python openstack client packages installed, including the additional python "shade" package installed via pip. See [Ben's local_deployments openstack_client.yml file](https://github.com/benroose/eecs_ansible_local_deployments/blob/master/tasks/openstack_client.yml) for a list of required packages.
+For deployment on OpenStack, you will need to have all [python openstack client packages installed](https://docs.openstack.org/newton/user-guide/common/cli-install-openstack-command-line-clients.html), including the additional ["shade"](https://docs.openstack.org/shade/latest/) package. See [Ben's local_deployments openstack_client.yml file](https://github.com/benroose/eecs_ansible_local_deployments/blob/master/tasks/openstack_client.yml) for a list of required packages.
 
 You must have also locally cloned [Ben's OpenStack Heat template modules](https://github.com/benroose/eecs_openstack_heat/tree/master/modules).
 
@@ -66,7 +66,7 @@ After everything is booted and configured, visit the public IP address of the ne
 ### Notes
 
   - Private network IP addresses are used for all cross-instance communication (e.g. mySQL communication, MySQL master/slave replication). It is assumed the private network is secure, so port specific firewalls and mySQL privileges allow for access by any host within this private network.
-  - Since a private network is used, all external Ansible connections to hosts via SSH must proxy through the public IP address of the Apache/phpMyAdmin server instance. The custom SSH proxyjump can be configured in `ansible.cfg` and `inventories/openstack/ssh.cfg`.
+  - Since a private network is used, all external Ansible connections into hosts via SSH must proxy through the public IP address of the Apache/phpMyAdmin server instance. The custom SSH proxyjump can be configured in `ansible.cfg` and `inventories/openstack/ssh.cfg`.
   - OpenStack security group `ingress web wsu net` (defined in heat templates as `sg_ingress_web`) and the `phpmyadmin_allow_access_ip` variable in `playbooks/www/vars.yml` are used to control external HTTP access into the Apache/phpMyAdmin server instance.
   - OpenStack security group `ingress ssh wsu limited net` (defined in heat templates as `sg_ingress_ssh`) is used to control external SSH/Ansible access into the Apache/phpMyAdmin server instance and for proxyjumping to the internal instances.
 
