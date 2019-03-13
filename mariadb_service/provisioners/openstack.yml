@@ -10,37 +10,39 @@
       access: wsu_only
       public_net: Public_971
       key: teaching
+      template: stack_openstack_with_vols.yml
+      environment:
+        - env_openstack_cslab.yml
 
     instances:
-      # - name: a4d-lamp-varnish
-      #   group: "lamp-varnish"
-        # security_group: ["default", "a4d_lamp_http"]
-      - name: a4d-lamp-www
-        group: "lamp-www"
-        # security_group: ["default", "a4d_lamp_http"]
-      # - name: a4d-lamp-www-2
+      # # - name: a4d-lamp-varnish
+      # #   group: "lamp-varnish"
+      #   # security_group: ["default", "a4d_lamp_http"]
+      # - name: a4d-lamp-www
       #   group: "lamp-www"
-        # security_group: ["default", "a4d_lamp_http"]
-      - name: a4d-lamp-db-1
-        group: "lamp-db"
-        # security_group: ["default", "a4d_lamp_db"]
-      - name: a4d-lamp-db-2
-        group: "lamp-db"
-        # security_group: ["default", "a4d_lamp_db"]
-      # - name: a4d-lamp-memcached
-      #   group: "lamp-memcached"
-        # security_group: ["default", "a4d_lamp_memcached"]
+      #   # security_group: ["default", "a4d_lamp_http"]
+      # # - name: a4d-lamp-www-2
+      # #   group: "lamp-www"
+      #   # security_group: ["default", "a4d_lamp_http"]
+      # - name: a4d-lamp-db-1
+      #   group: "lamp-db"
+      #   # security_group: ["default", "a4d_lamp_db"]
+      # - name: a4d-lamp-db-2
+      #   group: "lamp-db"
+      #   # security_group: ["default", "a4d_lamp_db"]
+      # # - name: a4d-lamp-memcached
+      # #   group: "lamp-memcached"
+      #   # security_group: ["default", "a4d_lamp_memcached"]
 
   tasks:
-    - name: Provision private network, security groups, and instances.
+    - name: Provision private network, security groups, and instances with openstack heat.
       ignore_errors: True
       register: stack_results
       os_stack:
         name: "{{ stack.name }}"
         state: present
-        template: stack_openstack.yml
-        environment:
-        - env_openstack.yml
+        template: "{{ stack.template }}"
+        environment: "{{ stack.environment }}"
         parameters:
           stack_access: "{{ stack.access }}"
           public_net: "{{ stack.public_net }}"
