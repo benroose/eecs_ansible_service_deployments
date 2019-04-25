@@ -1,0 +1,42 @@
+---
+#### IPTABLES ####
+firewall_allowed_tcp_ports: []
+#   - "22"
+#   - "80"
+
+# Allow SSH access only from WSU data center and VPN subnets
+firewall_additional_rules:
+  - "iptables -A INPUT -p tcp --dport 22 -s 156.26.250.0/25 -j ACCEPT"
+  - "iptables -A INPUT -p tcp --dport 22 -s 156.26.251.0/24 -j ACCEPT"
+  - "iptables -A INPUT -p tcp --dport 22 -s 10.250.0.0/24 -j ACCEPT"
+
+#### NTP ####
+ntp_manage_config: true
+ntp_servers:
+  - ntp1.wichita.edu
+  - ntp2.wichita.edu
+
+#### Red Hat Satellite subscription ####
+rhss_server_fqdn: https://rhss.wichita.edu
+rhss_org: "wsu_eecs"
+rhss_activationkey: "RHEL 7 OpenStack Test Servers"
+rhss_autosubscribe: yes
+# loc: eecs_datacenter
+# hostgroup: false
+# updatehost: true
+
+
+
+#### APACHE ####
+# apache_create_vhosts: true
+# apache_global_vhost_settings: |
+#   DirectoryIndex index.php index.html
+
+# apache_vhosts:
+#   # Additional properties:
+#   # 'serveradmin, serveralias, allow_override, options, extra_parameters'.
+#   - servername: "cslab-db-web.cs.wichita.edu"
+#     serveralias: "www.cslab-db-web"
+#     documentroot: "/var/www/html"
+#     extra_parameters: |
+#         RedirectMatch permanent ^/$ /phpmyadmin

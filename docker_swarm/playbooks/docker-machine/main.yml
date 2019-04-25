@@ -1,0 +1,18 @@
+---
+- hosts: dm-host
+  become: yes
+  # connection: local
+  # gather_facts: false
+
+  vars_files:
+    - vars.yml
+
+  roles:
+    - geerlingguy.firewall
+    - geerlingguy.ntp
+    - andrewrothstein.docker-machine
+
+  tasks:
+    # - include_tasks: tasks/rh_subscription_simple.yml
+    #   when: ansible_distribution == 'RedHat'
+

@@ -1,0 +1,12 @@
+---
+- src: geerlingguy.firewall
+- src: geerlingguy.ntp
+# - src: geerlingguy.repo-epel
+- src: andrewrothstein.docker-machine
+
+
+# switching geerlingguy's roles to benroose's forked versions
+# - src: geerlingguy.phpmyadmin # upstream galaxy role
+# - src: https://github.com/benroose/ansible-role-phpmyadmin # URL to my fork of Galaxy role's GitHub repo
+#   version: customized_config # the name of my patch branch
+#   name: geerlingguy.phpmyadmin # save role with name it had when downloaded from Galaxy

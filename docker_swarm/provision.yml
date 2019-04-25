@@ -1,0 +1,7 @@
+---
+
+# provision servers?
+# - import_playbook: provisioners/docker-machine.yml
+
+# Configure provisioned servers.
+- import_playbook: configure.yml

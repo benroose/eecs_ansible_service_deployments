@@ -1,0 +1,51 @@
+---
+- name: Register host with Red Hat Satellite subscription repositories
+  redhat_subscription:
+    state: present
+    server_hostname: "{{ rhss_server_fqdn }}"
+    org_id: "{{ rhss_org }}"
+    activationkey: "{{ rhss_activationkey }}"
+    # autosubscribe: "{{ rhss_autosubscribe }}"
+
+- name: disable all repositories
+  command: subscription-manager repos --disable=\*
+  # when: ansible_distribution == 'RedHat' and register_rhn
+
+- name: enable the needed rhel repositories
+  command: subscription-manager repos --enable={{ item }}
+  with_items:
+    - rhel-7-server-rpms
+    - rhel-7-server-extras-rpms
+    # when: ansible_distribution == 'RedHat' and register_rhn
+
+- name: update packages
+  yum:
+    name: '*'
+    state: latest
+  register: yum_result
+  async: 1000
+  poll: 30
+
+- name: check Kernel is the Latest
+  shell: if [ $(uname -r) == $(rpm -q kernel | tail -n 1 | sed -e 's/kernel-//g') ] ; then echo no ; else echo reboot; fi
+  ignore_errors: true
+  register: reboot_hint
+
+- name: restart server to get updated kernel
+  shell: sleep 2 && shutdown -r now "Ansible Restart Triggered for Undercloud Install"
+  async: 1
+  poll: 0
+  ignore_errors: true
+  when: yum_result.changed or reboot_hint.stdout.find("reboot") != -1
+
+- name: waiting for server to come back
+  wait_for:
+    host: "{{ inventory_hostname }}"
+    state: started
+    delay: 10
+    connect_timeout: 5
+    timeout: 300
+    port: 22
+  delegate_to: 127.0.0.1
+  become: false
+  ignore_errors: true

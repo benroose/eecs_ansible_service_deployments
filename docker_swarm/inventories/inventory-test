@@ -1,0 +1,24 @@
+# docker-swarm-testing
+[dm-host]
+vm-host2.cs.wichita.edu
+
+# Varnish
+# [lamp-varnish]
+# a4d-lamp-varnish
+
+
+# MySQL
+# [lamp-db]
+# cslab-db-0 mysql_replication_role=master mysql_server_id=1
+# cslab-db-1 mysql_replication_role=slave mysql_server_id=2
+
+# Group - All docker swarm
+[swarm:children]
+
+# Group - All infrastructure
+[infra:children]
+dm-host
+
+[infra:vars]
+ansible_ssh_user=ansible
+ansible_ssh_private_key_file=~/.ssh/ansible_rsa
