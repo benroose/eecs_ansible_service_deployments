@@ -5,6 +5,8 @@
 - src: andrewrothstein.docker-machine
 
 
+
+## Example for using role in own GitHub forked repo
 # switching geerlingguy's roles to benroose's forked versions
 # - src: geerlingguy.phpmyadmin # upstream galaxy role
 # - src: https://github.com/benroose/ansible-role-phpmyadmin # URL to my fork of Galaxy role's GitHub repo

@@ -1,19 +1,16 @@
-# docker-swarm-testing
+# docker swarm testing inventory
+
 [dm-host]
 vm-host2.cs.wichita.edu
 
-# Varnish
-# [lamp-varnish]
-# a4d-lamp-varnish
+[managers]
 
-
-# MySQL
-# [lamp-db]
-# cslab-db-0 mysql_replication_role=master mysql_server_id=1
-# cslab-db-1 mysql_replication_role=slave mysql_server_id=2
+[workers]
 
 # Group - All docker swarm
 [swarm:children]
+managers
+workers
 
 # Group - All infrastructure
 [infra:children]

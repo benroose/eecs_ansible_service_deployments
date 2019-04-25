@@ -1,6 +1,6 @@
 ---
 
-# provision servers?
+# provision swarm nodes
 # - import_playbook: provisioners/docker-machine.yml
 
 # Configure provisioned servers.

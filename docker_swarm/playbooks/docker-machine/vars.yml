@@ -24,19 +24,3 @@ rhss_autosubscribe: yes
 # loc: eecs_datacenter
 # hostgroup: false
 # updatehost: true
-
-
-
-#### APACHE ####
-# apache_create_vhosts: true
-# apache_global_vhost_settings: |
-#   DirectoryIndex index.php index.html
-
-# apache_vhosts:
-#   # Additional properties:
-#   # 'serveradmin, serveralias, allow_override, options, extra_parameters'.
-#   - servername: "cslab-db-web.cs.wichita.edu"
-#     serveralias: "www.cslab-db-web"
-#     documentroot: "/var/www/html"
-#     extra_parameters: |
-#         RedirectMatch permanent ^/$ /phpmyadmin
