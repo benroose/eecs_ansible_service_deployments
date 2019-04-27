@@ -24,3 +24,7 @@ rhss_autosubscribe: yes
 # loc: eecs_datacenter
 # hostgroup: false
 # updatehost: true
+
+#### software installation ####
+dockermachine_driver_kvm_enabled: yes
+

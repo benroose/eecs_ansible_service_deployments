@@ -10,9 +10,11 @@
   roles:
     - geerlingguy.firewall
     - geerlingguy.ntp
+    - geerlingguy.repo-epel
     - andrewrothstein.docker-machine
 
   tasks:
     # - include_tasks: tasks/rh_subscription_simple.yml
     #   when: ansible_distribution == 'RedHat'
 
+    # - include_tasks: tasks/software.yml

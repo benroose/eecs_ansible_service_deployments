@@ -1,7 +1,9 @@
 ---
+# Configure docker-machine host
+# - import_playbook: playbooks/docker-machine/main.yml
 
-# provision swarm nodes
-# - import_playbook: provisioners/docker-machine.yml
+# Provision swarm nodes
+- import_playbook: provisioners/docker-machine.yml
 
-# Configure provisioned servers.
-- import_playbook: configure.yml
+# Configure provisioned swarm nodes.
+# - import_playbook: configure.yml

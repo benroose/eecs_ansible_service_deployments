@@ -4,8 +4,11 @@
   gather_facts: false
 
   vars:
+    swarm_present: no
+    swarm_absent: yes
+
     num_of_managers: 1
-    num_of_workers: 1
+    num_of_workers: 2
       # name: swarm-manager-
       # group: "managers"
       # size: 1
@@ -27,19 +30,36 @@
 
   tasks:
     - name: Check current nodes running in docker-machine.
-      command: docker-machine ls --format "\{\{.Name\}\}"
-      register: dm_active_nodes
+      command: docker-machine ls --format {{ "{{'.'Name}}" }}
+      register: dm_virtual_machines
+      when: swarm_present
+
+    # - debug:
+    #     var: dm_virtual_machines
 
     - set_fact:
-        nodes_not_active: "{{ manager_nodes + worker_nodes | difference(dm_active_nodes) }}"
+        nodes_not_active: "{{ (manager_nodes + worker_nodes) | difference(dm_virtual_machines.stdout_lines) }}"
+      when: swarm_present
 
-    - debug:
-        var: nodes_not_active
-        # var: dm_nodes
+    # - debug:
+    #     var: nodes_not_active
 
     - name: Provision docker-machine swarm nodes not currently active.
-      command: docker-machine create -d virtualbox {{ item }}
+      command: docker-machine create -d kvm --kvm-nic-type virtio {{ item }}
       loop: "{{ nodes_not_active }}"
+      when: swarm_present
+
+    - name: Remove (destroy) all docker-machine swarm nodes.
+      command: docker-machine rm -y {{ item }}
+      loop: "{{ manager_nodes + worker_nodes }}"
+      when: swarm_absent
+
+    - name: Acquire list of active nodes in docker-machine at end of provisioning or removal.
+      command: docker-machine ls
+      register: dm_summary
+
+    - debug:
+        var: dm_summary.stdout_lines
 
 
 # ORIGINAL DO PROVISIONING
