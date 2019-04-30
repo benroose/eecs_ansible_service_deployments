@@ -4,8 +4,8 @@
   gather_facts: false
 
   vars:
-    swarm_present: no
-    swarm_absent: yes
+    swarm_present: yes
+    destroy_swarm: no
 
     num_of_managers: 1
     num_of_workers: 2
@@ -52,7 +52,7 @@
     - name: Remove (destroy) all docker-machine swarm nodes.
       command: docker-machine rm -y {{ item }}
       loop: "{{ manager_nodes + worker_nodes }}"
-      when: swarm_absent
+      when: destroy_swarm
 
     - name: Acquire list of active nodes in docker-machine at end of provisioning or removal.
       command: docker-machine ls
